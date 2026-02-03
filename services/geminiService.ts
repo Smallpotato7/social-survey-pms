@@ -1,12 +1,12 @@
 import { GoogleGenAI } from "@google/genai";
 
-// const apiKey = process.env.API_KEY || '';
-// // Initialize safe AI instance. 
-// // Note: In a real app, you should handle missing keys gracefully in UI, 
-// // but for this structure we assume env is set or we catch errors.
-// const ai = new GoogleGenAI({ apiKey });
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+// Initialize safe AI instance. 
+// Note: In a real app, you should handle missing keys gracefully in UI, 
+// but for this structure we assume env is set or we catch errors.
+const ai = new GoogleGenAI({ apiKey });
 
-const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY  });
+// const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY  });
 
 export const checkFormat = async (text: string): Promise<string> => {
   if (!apiKey) return "API Key not configured. Unable to perform AI format check.";
