@@ -6,13 +6,14 @@ import {
   Loader2, Edit3, Lock, GraduationCap, MapPin, UploadCloud, File, X, 
   Mic, Image, Database, Paperclip, Save, Search, Download, ExternalLink, FileText,
   Eye, Users, Plus, UserPlus, LogOut, MessageSquare, MonitorPlay, ChevronLeft, Calendar,
-  Send, MoreHorizontal, Settings, CornerUpLeft
+  Send, MoreHorizontal, Settings, CornerUpLeft, Camera, CheckSquare
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip as RechartsTooltip, CartesianGrid } from 'recharts';
 
 interface StudentDashboardProps {
   activeTab: string;
   user: User;
+  onUpdateUser: (u: Partial<User>) => void;
 }
 
 // --- MOCK DATA ---
@@ -30,31 +31,31 @@ const MOCK_HISTORY = [
 ];
 
 const MOCK_RESOURCES = [
-    { id: 1, name: '社会调查方法论.pdf', size: '2.4 MB', date: '2026-09-15' },
-    { id: 2, name: '问卷设计模板.docx', size: '1.1 MB', date: '2026-09-20' },
-    { id: 3, name: '往届优秀报告范例.pdf', size: '5.6 MB', date: '2026-10-01' },
+    { id: 1, name: '社会调查方法论.pdf', size: '2.4 MB', date: '2026-01-15' },
+    { id: 2, name: '问卷设计模板.docx', size: '1.1 MB', date: '2026-01-20' },
+    { id: 3, name: '往届优秀报告范例.pdf', size: '5.6 MB', date: '2026-01-01' },
 ];
 
 const MOCK_SUBMITTED_ASSIGNMENTS = [
   { 
       id: '101', 
       title: '社会调查选题确认', 
-      submitTime: '2026-10-14 14:30', 
+      submitTime: '2026-01-14 14:30', 
       status: TaskStatus.APPROVED, 
       score: 95, 
-      feedback: '选题切入点很好，具有很高的社会研究价值。建议后续在访谈提纲设计上多下功夫。',
-      content: '调查题目：城市社区垃圾分类现状调查\n主题：生态 (Ecology)',
-      attachments: ['survey_scheme_v1.pdf'] 
+      feedback: '选题切入点很好，具有很高的社会研究价值。建议后续在访谈提纲设计上多下功夫，特别是针对老年群体的提问方式需要更加通俗易懂。',
+      content: '调查题目：城市社区垃圾分类现状调查\n主题：生态 (Ecology)\n\n摘要：\n本项目旨在通过对XX社区的实地走访，了解居民对垃圾分类政策的认知度与执行力...',
+      attachments: ['调研报告.pdf'] 
   },
   { 
       id: '102', 
       title: '过程性材料提交', 
-      submitTime: '2026-11-01 09:15', 
+      submitTime: '2026-01-01 09:15', 
       status: TaskStatus.REVIEWING, 
       score: null, 
       feedback: null,
       content: '已上传访谈录音与初步数据统计表格。',
-      attachments: ['interview_01.mp3', 'data_stats.xlsx']
+      attachments: ['录音01.mp3', '数据统计表.xlsx']
   },
 ];
 
@@ -77,7 +78,7 @@ const MOCK_CHAT_MESSAGES = [
     { id: 4, sender: '李强', text: '收到，我会带上录音笔。', time: '10:36', isMe: false, avatar: 'L' },
 ];
 
-export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, user }) => {
+export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, user, onUpdateUser }) => {
   const [tasks, setTasks] = useState(MOCK_TASKS);
   // Group States
   const [group, setGroup] = useState(MOCK_GROUP);
@@ -88,6 +89,19 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, u
   const [chatInput, setChatInput] = useState('');
   const chatEndRef = useRef<HTMLDivElement>(null);
   const [editForm, setEditForm] = useState({ name: group.name, slogan: group.slogan });
+  
+  // Group Avatar State
+  const [groupAvatar, setGroupAvatar] = useState<string | null>(null);
+  const groupAvatarInputRef = useRef<HTMLInputElement>(null);
+
+  // Profile States
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [profileForm, setProfileForm] = useState({
+      name: user.name,
+      major: user.major || '',
+      class: user.class || ''
+  });
 
   // AI & Form States
   const [aiAnalysis, setAiAnalysis] = useState('');
@@ -104,6 +118,14 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, u
           scrollToBottom();
       }
   }, [groupView, chatMessages]);
+
+  useEffect(() => {
+      setProfileForm({
+          name: user.name,
+          major: user.major || '',
+          class: user.class || ''
+      });
+  }, [user]);
 
   const scrollToBottom = () => {
       chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -199,6 +221,39 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, u
       setGroup(prev => ({ ...prev, name: editForm.name, slogan: editForm.slogan }));
       setGroupView('overview');
       alert('小组信息更新成功！');
+  };
+  
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files && e.target.files[0]) {
+          const file = e.target.files[0];
+          const reader = new FileReader();
+          reader.onloadend = () => {
+              onUpdateUser({ avatar: reader.result as string });
+          };
+          reader.readAsDataURL(file);
+      }
+  };
+
+  const handleGroupAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files && e.target.files[0]) {
+          const file = e.target.files[0];
+          const reader = new FileReader();
+          reader.onloadend = () => {
+              setGroupAvatar(reader.result as string);
+          };
+          reader.readAsDataURL(file);
+      }
+  };
+
+  const handleSaveProfile = (e: React.FormEvent) => {
+      e.preventDefault();
+      onUpdateUser({
+          name: profileForm.name,
+          major: profileForm.major,
+          class: profileForm.class
+      });
+      setIsEditProfileOpen(false);
+      alert('个人资料已更新');
   };
 
   // --- Components ---
@@ -305,7 +360,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, u
                }`}></div>
 
                {/* Task Info */}
-               <div className="lg:w-1/3 p-8 border-b lg:border-b-0 lg:border-r border-brand-100 bg-[#faf9f6]">
+               <div className="lg:w-1/3 p-8 border-b lg:border-b-0 lg:border-r border-brand-100 bg-slate-50">
                  <div className="flex items-start justify-between gap-4 mb-4">
                     <h4 className="text-lg font-bold text-slate-800 leading-tight">
                         {task.type === TaskType.THEME_SELECTION ? '1. 调查选题确认' :
@@ -367,11 +422,11 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, u
                                         onChange={(e) => handleFormChange(task.id, 'theme', e.target.value)}
                                     >
                                         <option value="">请选择主题类型...</option>
-                                        <option value={SurveyTheme.POLITICS}>政治 (Politics)</option>
-                                        <option value={SurveyTheme.ECONOMY}>经济 (Economy)</option>
-                                        <option value={SurveyTheme.CULTURE}>文化 (Culture)</option>
-                                        <option value={SurveyTheme.SOCIETY}>社会 (Society)</option>
-                                        <option value={SurveyTheme.ECOLOGY}>生态 (Ecology)</option>
+                                        <option value={SurveyTheme.POLITICS}>政治类</option>
+                                        <option value={SurveyTheme.ECONOMY}>经济类</option>
+                                        <option value={SurveyTheme.CULTURE}>文化类</option>
+                                        <option value={SurveyTheme.SOCIETY}>社会类</option>
+                                        <option value={SurveyTheme.ECOLOGY}>生态类</option>
                                     </select>
                                     <div className="absolute right-4 top-4 text-slate-400 pointer-events-none">▼</div>
                                   </div>
@@ -688,10 +743,27 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, u
                      <div className="absolute inset-0 bg-black/10"></div>
                  </div>
                  <div className="px-8 pb-8">
-                     <div className="flex justify-between items-end -mt-10 mb-6">
-                         <div className="bg-white p-1.5 rounded-2xl shadow-lg">
-                             <div className="h-20 w-20 bg-brand-50 rounded-xl flex items-center justify-center text-3xl border border-brand-100 text-slate-700">
-                                 👥
+                     <div className="flex justify-between items-end -mt-10 mb-6 relative z-10">
+                         <div className="bg-white p-1.5 rounded-2xl shadow-lg relative group cursor-pointer">
+                             <input 
+                                type="file" 
+                                ref={groupAvatarInputRef} 
+                                className="hidden" 
+                                accept="image/*"
+                                onChange={handleGroupAvatarChange}
+                             />
+                             <div 
+                                onClick={() => groupAvatarInputRef.current?.click()}
+                                className="h-20 w-20 bg-brand-50 rounded-xl flex items-center justify-center text-3xl border border-brand-100 text-slate-700 overflow-hidden relative"
+                             >
+                                 {groupAvatar ? (
+                                     <img src={groupAvatar} alt="Group" className="w-full h-full object-cover" />
+                                 ) : (
+                                     "👥"
+                                 )}
+                                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white">
+                                     <Camera size={24}/>
+                                 </div>
                              </div>
                          </div>
                          <div className="text-right">
@@ -717,17 +789,17 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, u
                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                      {group.members.map(member => (
                          <div key={member.id} className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-brand-300 hover:shadow-md transition-all flex items-center gap-4 group">
-                             <div className="h-14 w-14 rounded-full bg-brand-50 text-brand-600 border border-brand-100 flex items-center justify-center font-bold text-xl group-hover:bg-brand-600 group-hover:text-white transition-colors">
+                             <div className="h-14 w-14 rounded-full bg-brand-50 text-brand-600 border border-brand-100 flex items-center justify-center font-bold text-xl group-hover:bg-brand-600 group-hover:text-white transition-colors flex-shrink-0 overflow-hidden">
                                  {member.avatar}
                              </div>
-                             <div className="flex-1">
+                             <div className="flex-1 min-w-0">
                                  <div className="flex justify-between items-start">
-                                    <h5 className="font-bold text-slate-800">{member.name}</h5>
+                                    <h5 className="font-bold text-slate-800 truncate">{member.name}</h5>
                                     {member.role === 'Leader' && (
-                                        <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-bold">组长</span>
+                                        <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-bold flex-shrink-0">组长</span>
                                     )}
                                  </div>
-                                 <p className="text-sm text-slate-500">{member.major}</p>
+                                 <p className="text-sm text-slate-500 truncate">{member.major}</p>
                              </div>
                          </div>
                      ))}
@@ -750,169 +822,145 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, u
       );
   }
 
-  // --- ASSIGNMENT QUERY MODULE ---
+  // --- QUERY / ASSIGNMENT HISTORY ---
   if (activeTab === 'query') {
-      if (selectedAssignment) {
-          // --- DETAIL VIEW ---
-          return (
-              <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-right-8 duration-300">
-                  <button 
-                    onClick={() => setSelectedAssignment(null)}
-                    className="flex items-center text-sm font-medium text-slate-500 hover:text-brand-600 transition-colors mb-2"
-                  >
-                      <ChevronLeft size={18} className="mr-1"/> 返回列表
-                  </button>
-
-                  <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                      {/* Header */}
-                      <div className="p-8 border-b border-slate-100 bg-slate-50/30">
-                          <div className="flex justify-between items-start">
-                              <div>
-                                  <h2 className="text-2xl font-bold text-slate-800 mb-2">{selectedAssignment.title}</h2>
-                                  <div className="flex items-center gap-4 text-sm text-slate-500">
-                                      <span className="flex items-center gap-1.5"><Calendar size={16}/> 提交时间: {selectedAssignment.submitTime}</span>
-                                      <span className="flex items-center gap-1.5"><Shield size={16}/> 任务ID: {selectedAssignment.id}</span>
-                                  </div>
-                              </div>
-                              <div className="flex flex-col items-end gap-2">
-                                  <span className={`px-3 py-1 rounded-full text-sm font-bold border ${
-                                      selectedAssignment.status === TaskStatus.APPROVED ? 'bg-green-50 text-green-700 border-green-200' :
-                                      selectedAssignment.status === TaskStatus.REVIEWING ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : 'bg-red-50 text-red-700 border-red-200'
-                                  }`}>
-                                      {selectedAssignment.status === TaskStatus.APPROVED ? '已通过' :
-                                       selectedAssignment.status === TaskStatus.REVIEWING ? '审核中' : '需修改'}
-                                  </span>
-                                  {selectedAssignment.score && (
-                                      <div className="text-2xl font-bold text-brand-600 font-mono">
-                                          {selectedAssignment.score} <span className="text-sm text-slate-400 font-normal">/ 100</span>
-                                      </div>
-                                  )}
-                              </div>
-                          </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-100">
-                          {/* Left: Feedback */}
-                          <div className="col-span-2 p-8 space-y-6">
-                              <div>
-                                  <h4 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                                      <MessageSquare size={16}/> 教师评语
-                                  </h4>
-                                  <div className="bg-slate-50 rounded-xl p-5 border border-slate-100 text-slate-700 leading-relaxed">
-                                      {selectedAssignment.feedback || (
-                                          <span className="text-slate-400 italic">暂无评语，请耐心等待教师审核...</span>
-                                      )}
-                                  </div>
-                              </div>
-                              
-                              <div>
-                                  <h4 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                                      <FileText size={16}/> 提交内容概览
-                                  </h4>
-                                  <div className="p-4 border border-slate-200 rounded-xl">
-                                      <pre className="text-sm text-slate-600 font-sans whitespace-pre-wrap">{selectedAssignment.content || '无文本内容'}</pre>
-                                  </div>
-                              </div>
-                          </div>
-
-                          {/* Right: Attachments */}
-                          <div className="col-span-1 p-8 bg-slate-50/50">
-                              <h4 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                                  <Paperclip size={16}/> 提交附件
-                              </h4>
-                              {selectedAssignment.attachments && selectedAssignment.attachments.length > 0 ? (
-                                  <div className="space-y-3">
-                                      {selectedAssignment.attachments.map((file: string, idx: number) => (
-                                          <div key={idx} className="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-lg shadow-sm hover:border-brand-300 transition-colors group cursor-pointer">
-                                              <div className="w-8 h-8 bg-brand-50 text-brand-600 rounded flex items-center justify-center">
-                                                  <File size={16}/>
-                                              </div>
-                                              <div className="flex-1 min-w-0">
-                                                  <p className="text-sm font-medium text-slate-700 truncate">{file}</p>
-                                                  <p className="text-xs text-slate-400">PDF Document</p>
-                                              </div>
-                                              <Download size={16} className="text-slate-300 group-hover:text-brand-600"/>
-                                          </div>
-                                      ))}
-                                  </div>
-                              ) : (
-                                  <p className="text-sm text-slate-400">无附件</p>
-                              )}
-                          </div>
-                      </div>
-                  </div>
-              </div>
-          );
-      }
-
-      // --- LIST VIEW ---
+    if (selectedAssignment) {
+      // Detail View
       return (
-          <div className="max-w-5xl mx-auto space-y-8">
-             <div className="flex items-center justify-between">
-                <div>
-                   <h3 className="text-2xl font-bold text-slate-800 tracking-tight">已提交作业查询</h3>
-                   <p className="text-slate-500 text-sm mt-1">查看所有历史提交记录、评分及教师反馈意见。</p>
-                </div>
-             </div>
+        <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-right-4 duration-300">
+           {/* Header with Back Button */}
+           <button onClick={() => setSelectedAssignment(null)} className="mb-4 flex items-center text-slate-500 hover:text-brand-600 transition-colors">
+             <ChevronLeft size={16} className="mr-1"/> 返回列表
+           </button>
 
-             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="divide-y divide-slate-100">
-                    {MOCK_SUBMITTED_ASSIGNMENTS.map(assignment => (
-                        <div key={assignment.id} className="p-6 hover:bg-slate-50/80 transition-colors group">
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-                                <div className="flex items-center gap-3">
-                                    <div className={`w-2.5 h-2.5 rounded-full ${
-                                        assignment.status === TaskStatus.APPROVED ? 'bg-green-500' :
-                                        assignment.status === TaskStatus.REVIEWING ? 'bg-yellow-500' : 'bg-red-500'
-                                    }`}></div>
-                                    <h4 className="text-lg font-bold text-slate-800 group-hover:text-brand-700 transition-colors">{assignment.title}</h4>
-                                    <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold border ${
-                                        assignment.status === TaskStatus.APPROVED ? 'bg-green-50 text-green-700 border-green-200' :
-                                        assignment.status === TaskStatus.REVIEWING ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : 'bg-red-50 text-red-700 border-red-200'
-                                    }`}>
-                                        {assignment.status === TaskStatus.APPROVED ? '已通过' :
-                                         assignment.status === TaskStatus.REVIEWING ? '审核中' : '需修改'}
-                                    </span>
+           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+              {/* Header Banner */}
+              <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-start">
+                 <div>
+                    <h2 className="text-2xl font-bold text-slate-800">{selectedAssignment.title}</h2>
+                    <div className="flex items-center gap-3 mt-2 text-sm text-slate-500">
+                        <span className="font-mono">ID: {selectedAssignment.id}</span>
+                        <span>•</span>
+                        <span>提交于 {selectedAssignment.submitTime}</span>
+                    </div>
+                 </div>
+                 <div className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border ${
+                    selectedAssignment.status === TaskStatus.APPROVED ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                    selectedAssignment.status === TaskStatus.REVIEWING ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                    'bg-slate-100 text-slate-600 border-slate-200'
+                 }`}>
+                    {selectedAssignment.status === TaskStatus.APPROVED ? '已通过' :
+                     selectedAssignment.status === TaskStatus.REVIEWING ? '审核中' : '已提交'}
+                 </div>
+              </div>
+
+              <div className="p-8 space-y-8">
+                 {/* Score & Feedback Section (Only if graded) */}
+                 {(selectedAssignment.score || selectedAssignment.feedback) && (
+                    <div className="bg-brand-50 rounded-xl border border-brand-100 p-6 relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-1 h-full bg-brand-400"></div>
+                        <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                            <CheckSquare size={20} className="text-brand-600"/> 教师反馈
+                        </h3>
+                        <div className="flex flex-col md:flex-row gap-6">
+                            {selectedAssignment.score && (
+                                <div className="flex-shrink-0 text-center px-6 py-4 bg-white rounded-lg border border-brand-100 shadow-sm">
+                                    <span className="block text-xs text-slate-400 uppercase font-bold tracking-wider">最终得分</span>
+                                    <span className="block text-4xl font-extrabold text-brand-600 mt-1">{selectedAssignment.score}</span>
                                 </div>
-                                <div className="flex items-center text-sm text-slate-500 font-mono">
-                                    <Clock size={14} className="mr-1.5"/> {assignment.submitTime}
-                                </div>
-                            </div>
-                            
-                            <div className="flex flex-col md:flex-row gap-6 items-start">
-                                <div className="flex-1">
-                                    <p className="text-sm text-slate-600 line-clamp-2">
-                                        <span className="font-bold text-slate-400 text-xs uppercase mr-2">评语</span>
-                                        {assignment.feedback || '暂无评语...'}
+                            )}
+                            <div className="flex-1">
+                                {selectedAssignment.feedback ? (
+                                    <p className="text-slate-600 text-sm leading-relaxed italic">
+                                        "{selectedAssignment.feedback}"
                                     </p>
-                                </div>
-                                <div className="flex items-center gap-6">
-                                    <div className="text-right">
-                                        <span className="text-xs font-bold text-slate-400 uppercase">得分</span>
-                                        <p className={`text-xl font-bold font-mono ${assignment.score ? 'text-brand-600' : 'text-slate-300'}`}>
-                                            {assignment.score ? assignment.score : '--'}
-                                        </p>
-                                    </div>
-                                    <button 
-                                        onClick={() => setSelectedAssignment(assignment)}
-                                        className="px-4 py-2 bg-white border border-slate-200 text-brand-600 font-semibold text-sm rounded-lg hover:bg-brand-50 hover:border-brand-200 transition-all shadow-sm flex items-center gap-1"
-                                    >
-                                        查看详情 <ExternalLink size={14}/>
-                                    </button>
-                                </div>
+                                ) : (
+                                    <p className="text-slate-400 text-sm italic">暂无文字评语</p>
+                                )}
                             </div>
                         </div>
-                    ))}
-                    {MOCK_SUBMITTED_ASSIGNMENTS.length === 0 && (
-                        <div className="p-12 text-center text-slate-400">
-                            <Search size={48} className="mx-auto mb-3 text-slate-200"/>
-                            <p>暂无提交记录</p>
-                        </div>
-                    )}
-                </div>
-             </div>
-          </div>
+                    </div>
+                 )}
+
+                 {/* Submission Content */}
+                 <div>
+                     <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-100 pb-2">
+                        <FileText size={20} className="text-slate-400"/> 提交内容
+                     </h3>
+                     <div className="bg-slate-50 rounded-xl p-6 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap border border-slate-200 font-mono">
+                         {selectedAssignment.content}
+                     </div>
+                 </div>
+
+                 {/* Attachments */}
+                 {selectedAssignment.attachments && selectedAssignment.attachments.length > 0 && (
+                     <div>
+                         <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-100 pb-2">
+                            <Paperclip size={20} className="text-slate-400"/> 附件列表
+                         </h3>
+                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                             {selectedAssignment.attachments.map((file: string, idx: number) => (
+                                 <div key={idx} className="flex items-center p-3 bg-white border border-slate-200 rounded-lg hover:border-brand-300 hover:shadow-sm transition-all group cursor-pointer">
+                                     <div className="w-10 h-10 bg-slate-100 text-slate-500 rounded-lg flex items-center justify-center mr-3 group-hover:bg-brand-50 group-hover:text-brand-600 transition-colors">
+                                         <File size={18}/>
+                                     </div>
+                                     <div className="flex-1 overflow-hidden">
+                                         <p className="text-sm font-medium text-slate-700 truncate group-hover:text-brand-700">{file}</p>
+                                         <p className="text-xs text-slate-400">点击下载</p>
+                                     </div>
+                                     <Download size={16} className="text-slate-300 group-hover:text-brand-500"/>
+                                 </div>
+                             ))}
+                         </div>
+                     </div>
+                 )}
+              </div>
+           </div>
+        </div>
       );
+    }
+
+    // List View
+    return (
+        <div className="max-w-5xl mx-auto space-y-6">
+            <div className="flex items-center justify-between">
+                <div>
+                   <h3 className="text-2xl font-bold text-slate-800 tracking-tight">作业查询</h3>
+                   <p className="text-slate-500 text-sm mt-1">查看历史提交记录、审核状态及教师反馈。</p>
+                </div>
+            </div>
+
+            <div className="grid gap-4">
+                {MOCK_SUBMITTED_ASSIGNMENTS.map((assignment) => (
+                    <div key={assignment.id} className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-4 group">
+                        <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                                <h4 className="text-lg font-bold text-slate-800 group-hover:text-brand-700 transition-colors">{assignment.title}</h4>
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${
+                                    assignment.status === TaskStatus.APPROVED ? 'bg-green-50 text-green-700 border-green-200' :
+                                    assignment.status === TaskStatus.REVIEWING ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                                    'bg-blue-50 text-blue-700 border-blue-200'
+                                }`}>
+                                    {assignment.status === TaskStatus.APPROVED ? '已通过' :
+                                     assignment.status === TaskStatus.REVIEWING ? '审核中' : '已提交'}
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-4 text-xs text-slate-500">
+                                <span className="flex items-center gap-1"><Calendar size={14}/> {assignment.submitTime}</span>
+                                {assignment.score && <span className="flex items-center gap-1 font-semibold text-brand-600"><CheckSquare size={14}/> 得分: {assignment.score}</span>}
+                            </div>
+                        </div>
+                        <button 
+                            onClick={() => setSelectedAssignment(assignment)}
+                            className="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 hover:text-brand-600 hover:border-brand-300 transition-all flex items-center gap-2 shadow-sm"
+                        >
+                            查看详情 <ChevronLeft size={16} className="rotate-180"/>
+                        </button>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
   }
 
   // ... (Other tabs 'resources', 'format', 'profile' logic remains same)
@@ -1003,34 +1051,54 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, u
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden sticky top-0">
              <div className="h-24 bg-brand-600"></div>
              <div className="px-6 pb-6 relative">
-                <div className="h-24 w-24 rounded-full bg-white p-1 absolute -top-12 left-1/2 transform -translate-x-1/2 shadow-md">
-                    <div className="h-full w-full rounded-full bg-slate-100 flex items-center justify-center text-3xl font-bold text-slate-600">
-                        {user.name.charAt(0)}
+                <div className="h-24 w-24 rounded-full bg-white p-1 absolute -top-12 left-1/2 transform -translate-x-1/2 shadow-md relative group">
+                    <input 
+                        type="file" 
+                        ref={avatarInputRef} 
+                        className="hidden" 
+                        accept="image/*"
+                        onChange={handleAvatarChange}
+                    />
+                    <div className="h-full w-full rounded-full bg-slate-100 flex items-center justify-center text-3xl font-bold text-slate-600 overflow-hidden relative">
+                         {user.avatar && (user.avatar.startsWith('http') || user.avatar.startsWith('data:')) ? (
+                             <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover"/>
+                         ) : (
+                             user.name.charAt(0)
+                         )}
+                         <div 
+                            onClick={() => avatarInputRef.current?.click()}
+                            className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-white"
+                         >
+                             <Camera size={24}/>
+                         </div>
                     </div>
                 </div>
                 <div className="mt-14 text-center">
                     <h2 className="text-xl font-bold text-slate-800">{user.name}</h2>
-                    <p className="text-slate-500 text-sm mt-1">{user.major}</p>
+                    <p className="text-slate-500 text-sm mt-1">{user.major ? `${user.major} • 学生` : '学生'}</p>
                     
                     <div className="mt-6 space-y-4 text-left">
                         <div className="flex items-center text-sm text-slate-600 border-b border-slate-50 pb-2">
                             <GraduationCap size={16} className="mr-3 text-brand-500"/>
-                            <span className="flex-1">年级</span>
-                            <span className="font-medium text-slate-800">2021级</span>
+                            <span className="flex-1">年级/班级</span>
+                            <span className="font-medium text-slate-800">{user.class || '未设置'}</span>
                         </div>
                         <div className="flex items-center text-sm text-slate-600 border-b border-slate-50 pb-2">
                             <MapPin size={16} className="mr-3 text-brand-500"/>
-                            <span className="flex-1">班级</span>
-                            <span className="font-medium text-slate-800">{user.class || '1班'}</span>
+                            <span className="flex-1">院系</span>
+                            <span className="font-medium text-slate-800">{user.major || '未设置'}</span>
                         </div>
                         <div className="flex items-center text-sm text-slate-600 pb-2">
                             <UserIcon size={16} className="mr-3 text-brand-500"/>
                             <span className="flex-1">学号</span>
-                            <span className="font-medium text-slate-800">{user.studentId}</span>
+                            <span className="font-medium text-slate-800">{user.studentId || '2023001'}</span>
                         </div>
                     </div>
 
-                    <button className="w-full mt-6 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+                    <button 
+                        onClick={() => setIsEditProfileOpen(true)}
+                        className="w-full mt-6 py-2 border border-slate-300 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                    >
                         编辑资料
                     </button>
                 </div>
@@ -1040,40 +1108,34 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, u
 
         {/* Right Column: Detailed Info Sections */}
         <div className="col-span-12 md:col-span-8 lg:col-span-9 space-y-8">
-            {/* Section 1: Stats / Learning Archive */}
-            <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
-                <div className="flex justify-between items-center mb-6">
-                    <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
-                        <Book size={20} className="text-brand-600"/> 学习档案
-                    </h3>
-                    <div className="flex gap-2">
-                         <span className="text-xs px-2 py-1 bg-green-50 text-green-700 rounded-md font-medium">平均分: 86</span>
-                         <span className="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded-md font-medium">提交率: 100%</span>
+            {/* Section: Study Stats */}
+            <div className="bg-white p-8 rounded-lg shadow-sm border border-slate-200">
+                <h3 className="font-bold text-slate-800 text-lg mb-6 flex items-center gap-2">
+                    <Book size={20} className="text-brand-500"/> 学习概况
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="p-4 bg-slate-50 rounded-lg border border-slate-100">
+                        <p className="text-slate-500 text-xs uppercase font-bold">已提交作业</p>
+                        <p className="text-2xl font-bold text-slate-800 mt-1">2 份</p>
                     </div>
-                </div>
-                <div className="h-64 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={MOCK_HISTORY}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9"/>
-                            <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} tick={{fill: '#64748b'}}/>
-                            <YAxis fontSize={12} tickLine={false} axisLine={false} tick={{fill: '#64748b'}}/>
-                            <RechartsTooltip 
-                                cursor={{fill: '#f8fafc'}}
-                                contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
-                            />
-                            <Bar dataKey="score" fill="#947c60" radius={[4,4,0,0]} barSize={50} />
-                        </BarChart>
-                    </ResponsiveContainer>
+                    <div className="p-4 bg-slate-50 rounded-lg border border-slate-100">
+                        <p className="text-slate-500 text-xs uppercase font-bold">平均得分</p>
+                        <p className="text-2xl font-bold text-slate-800 mt-1">92.5</p>
+                    </div>
+                    <div className="p-4 bg-slate-50 rounded-lg border border-slate-100">
+                        <p className="text-slate-500 text-xs uppercase font-bold">所属小组</p>
+                        <p className="text-2xl font-bold text-brand-600 mt-1 truncate">{group.name}</p>
+                    </div>
                 </div>
             </div>
 
-            {/* Section 2: Security Settings */}
-            <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+            {/* Section: Security Settings */}
+            <div className="bg-white p-8 rounded-lg shadow-sm border border-slate-200">
                 <h3 className="font-bold text-slate-800 text-lg mb-6 flex items-center gap-2">
-                    <Shield size={20} className="text-brand-600"/> 安全设置
+                    <Shield size={20} className="text-brand-500"/> 安全设置
                 </h3>
                 <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100 hover:border-brand-200 transition-colors">
+                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-100 hover:border-brand-200 transition-colors">
                         <div className="flex items-center gap-4">
                             <div className="h-10 w-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-600">
                                 <Lock size={18}/>
@@ -1083,34 +1145,81 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, u
                                 <p className="text-slate-500 text-xs mt-0.5">建议定期更换密码以保障账户安全</p>
                             </div>
                         </div>
-                        <button className="text-brand-600 hover:text-brand-800 text-sm font-medium px-4 py-2 hover:bg-brand-50 rounded-lg transition-colors">修改</button>
-                    </div>
-
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100 hover:border-brand-200 transition-colors">
-                        <div className="flex items-center gap-4">
-                            <div className="h-10 w-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-600">
-                                <AlertCircle size={18}/>
-                            </div>
-                            <div>
-                                <p className="font-semibold text-slate-800 text-sm">密保问题</p>
-                                <p className="text-slate-500 text-xs mt-0.5">未设置密保问题，用于找回密码</p>
-                            </div>
-                        </div>
-                        <button className="text-brand-600 hover:text-brand-800 text-sm font-medium px-4 py-2 hover:bg-brand-50 rounded-lg transition-colors">设置</button>
+                        <button className="text-brand-600 hover:text-brand-800 text-sm font-medium px-4 py-2 hover:bg-brand-50 rounded-md transition-colors">修改</button>
                     </div>
                 </div>
             </div>
         </div>
+
+        {/* Edit Profile Modal */}
+        {isEditProfileOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+                <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                    <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                        <h3 className="font-bold text-slate-800">编辑个人资料</h3>
+                        <button onClick={() => setIsEditProfileOpen(false)}><X size={20} className="text-slate-400 hover:text-slate-600"/></button>
+                    </div>
+                    <form onSubmit={handleSaveProfile} className="p-6 space-y-4">
+                        <div>
+                            <label className="block text-sm font-bold text-slate-700 mb-1">姓名</label>
+                            <input 
+                                type="text" 
+                                required
+                                className="w-full border-slate-300 rounded-md p-2.5 border focus:ring-2 focus:ring-brand-500"
+                                value={profileForm.name}
+                                onChange={e => setProfileForm({...profileForm, name: e.target.value})}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-slate-700 mb-1">专业</label>
+                            <input 
+                                type="text" 
+                                className="w-full border-slate-300 rounded-md p-2.5 border focus:ring-2 focus:ring-brand-500"
+                                value={profileForm.major}
+                                placeholder="例如：社会学"
+                                onChange={e => setProfileForm({...profileForm, major: e.target.value})}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-slate-700 mb-1">班级</label>
+                            <input 
+                                type="text" 
+                                className="w-full border-slate-300 rounded-md p-2.5 border focus:ring-2 focus:ring-brand-500"
+                                value={profileForm.class}
+                                placeholder="例如：2班"
+                                onChange={e => setProfileForm({...profileForm, class: e.target.value})}
+                            />
+                        </div>
+                        <div className="pt-4 flex justify-end gap-3">
+                            <button 
+                                type="button" 
+                                onClick={() => setIsEditProfileOpen(false)} 
+                                className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-md text-sm font-medium"
+                            >
+                                取消
+                            </button>
+                            <button 
+                                type="submit" 
+                                className="px-4 py-2 bg-brand-500 text-white rounded-md text-sm font-medium hover:bg-brand-600 flex items-center gap-2"
+                            >
+                                <Save size={16}/> 保存更改
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        )}
       </div>
     );
   }
 
+  // Fallback
   return (
     <div className="flex flex-col items-center justify-center h-full text-slate-400">
-      <div className="p-8 bg-slate-100 rounded-full mb-6 shadow-inner">
-         <AlertCircle size={64} className="text-slate-300" />
+      <div className="p-6 bg-slate-100 rounded-full mb-4 shadow-inner">
+         <Settings size={48} className="text-slate-300" />
       </div>
-      <h3 className="text-2xl font-bold text-slate-600">功能建设中</h3>
+      <h3 className="text-xl font-bold text-slate-600">模块开发中</h3>
       <p className="mt-2 text-slate-500">当前模块: {activeTab}</p>
     </div>
   );

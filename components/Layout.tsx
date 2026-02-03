@@ -12,7 +12,9 @@ import {
   Search, 
   CheckCircle, 
   Users,
-  Bell
+  Bell,
+  PanelLeftClose,
+  PanelLeftOpen
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -38,7 +40,7 @@ export const Layout: React.FC<LayoutProps> = ({ user, onLogout, children, active
       case UserRole.STUDENT:
         return [
           { id: 'tasks', label: '任务中心', icon: <Target size={20} /> },
-          { id: 'group', label: '我的小组', icon: <Users size={20} /> }, // New Group Module
+          { id: 'group', label: '我的小组', icon: <Users size={20} /> }, 
           { id: 'resources', label: '资料中心', icon: <FileText size={20} /> },
           { id: 'query', label: '作业查询', icon: <Search size={20} /> }, 
           { id: 'format', label: '格式检验', icon: <CheckCircle size={20} /> },
@@ -53,94 +55,137 @@ export const Layout: React.FC<LayoutProps> = ({ user, onLogout, children, active
     }
   };
 
+  const renderAvatar = (u: User, sizeClass: string = "h-9 w-9", fontSizeClass: string = "text-sm") => {
+    if (u.avatar && (u.avatar.startsWith('http') || u.avatar.startsWith('data:'))) {
+        return (
+            <img 
+                src={u.avatar} 
+                alt={u.name} 
+                className={`${sizeClass} rounded-full object-cover border border-slate-200 shadow-sm`}
+            />
+        );
+    }
+    return (
+        <div className={`${sizeClass} rounded-full bg-brand-500 flex items-center justify-center ${fontSizeClass} font-bold shadow-sm text-white`}>
+            {u.name.charAt(0)}
+        </div>
+    );
+  };
+
   return (
-    <div className="flex h-screen bg-[#fcfbf9] overflow-hidden text-slate-800">
-      {/* Sidebar */}
-      <div className={`${isSidebarOpen ? 'w-64' : 'w-20'} bg-brand-900 text-brand-50 transition-all duration-300 flex flex-col shadow-2xl z-20`}>
-        <div className="p-5 flex items-center justify-between border-b border-brand-800/50">
-          {isSidebarOpen && <span className="font-bold text-lg tracking-wide truncate text-brand-50">社会调查管理</span>}
-          <button onClick={() => setSidebarOpen(!isSidebarOpen)} className="p-1.5 hover:bg-brand-800 rounded-md text-brand-200 hover:text-white transition-colors">
-            <Menu size={20} />
-          </button>
+    <div className="flex h-screen bg-white overflow-hidden text-slate-800 font-sans">
+      {/* Sidebar - Netlify Style: Light background, distinct border */}
+      <div className={`${isSidebarOpen ? 'w-64' : 'w-20'} bg-slate-50 border-r border-slate-200 flex flex-col transition-all duration-300 z-20`}>
+        {/* Sidebar Header */}
+        <div className="h-16 flex items-center justify-between px-5 border-b border-slate-200/50">
+          {isSidebarOpen ? (
+              <div className="flex items-center gap-2 text-brand-600">
+                  <div className="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-sm">S</div>
+                  <span className="font-bold text-lg tracking-tight text-slate-800">社会调查管理</span>
+              </div>
+          ) : (
+             <div className="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center text-white font-bold text-xl mx-auto shadow-sm">S</div>
+          )}
+          
+          {isSidebarOpen && (
+            <button onClick={() => setSidebarOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                <PanelLeftClose size={18} />
+            </button>
+          )}
         </div>
         
+        {!isSidebarOpen && (
+             <button onClick={() => setSidebarOpen(true)} className="mt-4 mx-auto text-slate-400 hover:text-slate-600 transition-colors">
+                <PanelLeftOpen size={18} />
+             </button>
+        )}
+
+        {/* Profile Section - Moved to Top */}
+        <div className={`border-b border-slate-200/50 ${isSidebarOpen ? 'p-4' : 'p-2'} transition-all`}>
+          <div 
+            className={`flex items-center ${isSidebarOpen ? 'space-x-3 px-2' : 'justify-center'} py-2 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors group`}
+            onClick={() => setActiveTab('profile')}
+            title="进入个人中心"
+          >
+             {renderAvatar(user)}
+             {isSidebarOpen && (
+               <div className="flex-1 overflow-hidden text-left">
+                 <p className="text-sm font-semibold truncate text-slate-700 group-hover:text-brand-600 transition-colors">{user.name}</p>
+                 <p className="text-xs text-slate-500 truncate">
+                   {user.major ? user.major : (user.role === UserRole.TEACHER ? '教师' : user.role === UserRole.STUDENT ? '学生' : '管理员')}
+                 </p>
+               </div>
+             )}
+          </div>
+        </div>
+
+        {/* Navigation */}
         <div className="flex-1 overflow-y-auto py-6">
-          <nav className="space-y-1.5 px-3">
+          <nav className="space-y-1 px-3">
             {getMenuItems().map((item) => (
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`w-full flex items-center space-x-3 px-3 py-3.5 rounded-xl transition-all duration-200 group ${
+                className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative ${
                   activeTab === item.id 
-                    ? 'bg-brand-700 text-white shadow-lg shadow-brand-950/20' 
-                    : 'text-brand-200 hover:bg-brand-800 hover:text-white'
+                    ? 'bg-brand-50/80 text-brand-700 font-semibold' 
+                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                 }`}
               >
-                <div className={`${activeTab === item.id ? 'text-white' : 'text-brand-300 group-hover:text-white'} transition-colors`}>
+                {/* Active Indicator Strip */}
+                {activeTab === item.id && (
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-brand-500 rounded-r-full"></div>
+                )}
+                
+                <div className={`${activeTab === item.id ? 'text-brand-600' : 'text-slate-400 group-hover:text-slate-600'} transition-colors ml-1`}>
                     {item.icon}
                 </div>
-                {isSidebarOpen && <span className="font-medium text-sm tracking-wide">{item.label}</span>}
+                {isSidebarOpen && <span className="text-sm">{item.label}</span>}
               </button>
             ))}
           </nav>
         </div>
 
-        <div className="p-4 border-t border-brand-800/50 bg-brand-950/30">
-          <div 
-            className="flex items-center space-x-3 mb-4 px-2 cursor-pointer hover:bg-brand-800/50 p-2 rounded-lg transition-colors group"
-            onClick={() => setActiveTab('profile')}
-            title="进入个人中心"
-          >
-             <div className="h-9 w-9 rounded-full bg-brand-600 flex items-center justify-center text-sm font-bold shadow-md ring-2 ring-brand-500 group-hover:ring-brand-400 transition-all text-white">
-                {user.name.charAt(0)}
-             </div>
-             {isSidebarOpen && (
-               <div className="flex-1 overflow-hidden">
-                 <p className="text-sm font-medium truncate text-brand-100 group-hover:text-white">{user.name}</p>
-                 <p className="text-xs text-brand-400 truncate capitalize">
-                   {user.role === UserRole.TEACHER ? '教师' : user.role === UserRole.STUDENT ? '学生' : '管理员'}
-                 </p>
-               </div>
-             )}
-          </div>
+        {/* Footer - Logout Only */}
+        <div className="p-4 border-t border-slate-200/50">
           <button 
             onClick={onLogout}
-            className="w-full flex items-center space-x-3 px-3 py-2 text-brand-300 hover:bg-red-900/30 hover:text-red-200 rounded-lg transition-colors"
+            className={`w-full flex items-center ${isSidebarOpen ? 'justify-start space-x-3 px-3' : 'justify-center'} py-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors`}
+            title="退出登录"
           >
             <LogOut size={20} />
-            {isSidebarOpen && <span>退出登录</span>}
+            {isSidebarOpen && <span className="text-sm font-medium">退出登录</span>}
           </button>
         </div>
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden relative bg-[#fcfbf9]">
-        <header className="h-16 bg-white shadow-sm flex items-center justify-between px-8 z-10 border-b border-brand-100 backdrop-blur-sm bg-white/90">
+      <main className="flex-1 flex flex-col overflow-hidden relative bg-white">
+        <header className="h-16 flex items-center justify-between px-8 border-b border-slate-100 bg-white sticky top-0 z-10">
           <h2 className="text-xl font-bold text-slate-800 tracking-tight">
             {activeTab === 'profile' ? '个人信息' : getMenuItems().find(i => i.id === activeTab)?.label || '仪表盘'}
           </h2>
-          <div className="flex items-center space-x-6">
-            <div className="relative group">
-                <Bell size={20} className="text-slate-400 hover:text-brand-600 cursor-pointer transition-colors" />
-                <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 bg-red-500 rounded-full border-2 border-white"></span>
-            </div>
-            <div 
-                className="flex items-center gap-3 pl-6 border-l border-brand-200 cursor-pointer hover:opacity-80 transition-opacity"
-                onClick={() => setActiveTab('profile')}
-            >
-                <div className="text-right hidden md:block">
-                    <p className="text-sm font-semibold text-slate-700">{user.name}</p>
-                    <p className="text-xs text-slate-500">
-                      {user.role === UserRole.TEACHER ? '教师' : user.role === UserRole.STUDENT ? '学生' : '管理员'}
-                    </p>
-                </div>
-                <div className="h-10 w-10 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-lg font-bold border border-brand-200 shadow-sm">
-                   {user.name.charAt(0)}
-                </div>
-            </div>
+          <div className="flex items-center space-x-5">
+             <div className="relative">
+                 <Search size={18} className="text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"/>
+                 <input 
+                    type="text" 
+                    placeholder="Search tasks..." 
+                    className="pl-9 pr-4 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-sm focus:ring-2 focus:ring-brand-200 focus:border-brand-500 outline-none w-64 transition-all"
+                 />
+                 <div className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-400 border border-slate-200 rounded px-1.5 bg-white">Ctrl K</div>
+             </div>
+             
+             <button className="relative p-2 text-slate-500 hover:text-brand-600 hover:bg-brand-50 rounded-full transition-all">
+                <Bell size={20} />
+                <span className="absolute top-1.5 right-1.5 h-2 w-2 bg-red-500 rounded-full border border-white"></span>
+             </button>
+             
+             {/* Note: User profile removed from top-right since it is now prominent in top-left sidebar */}
           </div>
         </header>
-        <div className="flex-1 overflow-y-auto p-8 scroll-smooth">
+        
+        <div className="flex-1 overflow-y-auto p-8 scroll-smooth bg-white">
           {children}
         </div>
       </main>

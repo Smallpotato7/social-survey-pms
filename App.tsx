@@ -22,6 +22,12 @@ const App: React.FC = () => {
     setUser(null);
   };
 
+  const handleUpdateUser = (updates: Partial<User>) => {
+    if (user) {
+      setUser({ ...user, ...updates });
+    }
+  };
+
   if (!user) {
     return <Login onLogin={handleLogin} />;
   }
@@ -33,9 +39,15 @@ const App: React.FC = () => {
       activeTab={activeTab} 
       setActiveTab={setActiveTab}
     >
-      {user.role === UserRole.TEACHER && <TeacherDashboard activeTab={activeTab} />}
-      {user.role === UserRole.STUDENT && <StudentDashboard activeTab={activeTab} user={user} />}
-      {user.role === UserRole.ADMIN && <AdminDashboard activeTab={activeTab} />}
+      {user.role === UserRole.TEACHER && (
+        <TeacherDashboard activeTab={activeTab} onUpdateUser={handleUpdateUser} user={user} />
+      )}
+      {user.role === UserRole.STUDENT && (
+        <StudentDashboard activeTab={activeTab} user={user} onUpdateUser={handleUpdateUser} />
+      )}
+      {user.role === UserRole.ADMIN && (
+        <AdminDashboard activeTab={activeTab} onUpdateUser={handleUpdateUser} user={user} />
+      )}
     </Layout>
   );
 };

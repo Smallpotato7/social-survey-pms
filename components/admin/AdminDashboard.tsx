@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
-import { Users, Settings, Bell, Upload, Trash2, Edit2, Plus, X, Save, Shield, HardDrive } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Users, Settings, Bell, Upload, Trash2, Edit2, Plus, X, Save, Shield, HardDrive, User as UserIcon, Camera, Mail } from 'lucide-react';
+import { User } from '../../types';
 
 interface AdminDashboardProps {
   activeTab: string;
+  user: User;
+  onUpdateUser: (u: Partial<User>) => void;
 }
 
 interface AdminUser {
@@ -13,7 +16,7 @@ interface AdminUser {
     uploadLimitMB: number; // New field for quota
 }
 
-export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab }) => {
+export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab, user, onUpdateUser }) => {
   const [users, setUsers] = useState<AdminUser[]>([
     { id: 1, name: '李华', role: 'Student', email: 'lihua@uni.edu', uploadLimitMB: 50 },
     { id: 2, name: '张教授', role: 'Teacher', email: 'zhang@uni.edu', uploadLimitMB: 500 },
@@ -27,6 +30,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab }) => 
 
   // Form States
   const [newUser, setNewUser] = useState<Partial<AdminUser>>({ role: 'Student', uploadLimitMB: 50 });
+
+  // Profile
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [profileForm, setProfileForm] = useState({
+      name: user.name,
+  });
+
+  useEffect(() => {
+    setProfileForm({
+        name: user.name,
+    });
+  }, [user]);
 
   const handleAddUser = (e: React.FormEvent) => {
       e.preventDefault();
@@ -57,6 +73,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab }) => 
       if (confirm('确定要删除该用户吗？此操作不可恢复。')) {
           setUsers(users.filter(u => u.id !== id));
       }
+  };
+  
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files && e.target.files[0]) {
+          const file = e.target.files[0];
+          const reader = new FileReader();
+          reader.onloadend = () => {
+              onUpdateUser({ avatar: reader.result as string });
+          };
+          reader.readAsDataURL(file);
+      }
+  };
+
+  const handleSaveProfile = (e: React.FormEvent) => {
+      e.preventDefault();
+      onUpdateUser({
+          name: profileForm.name,
+      });
+      setIsEditProfileOpen(false);
+      alert('个人资料已更新');
   };
 
   const openEditModal = (user: AdminUser) => {
@@ -253,6 +289,111 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab }) => 
            </div>
         </div>
     )
+  }
+  
+  if (activeTab === 'profile') {
+      return (
+          <div className="max-w-3xl mx-auto">
+             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="h-32 bg-slate-800"></div>
+                <div className="px-8 pb-8 -mt-12">
+                   <div className="flex justify-between items-end">
+                      <div className="relative group">
+                          <input 
+                                type="file" 
+                                ref={avatarInputRef} 
+                                className="hidden" 
+                                accept="image/*"
+                                onChange={handleAvatarChange}
+                            />
+                          <div className="h-24 w-24 rounded-full bg-slate-100 border-4 border-white shadow-md flex items-center justify-center text-3xl font-bold text-slate-600 overflow-hidden relative">
+                              {user.avatar && (user.avatar.startsWith('http') || user.avatar.startsWith('data:')) ? (
+                                   <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover"/>
+                               ) : (
+                                   user.name.charAt(0)
+                               )}
+                               <div 
+                                    onClick={() => avatarInputRef.current?.click()}
+                                    className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-white"
+                                 >
+                                     <Camera size={24}/>
+                                 </div>
+                          </div>
+                      </div>
+                      <div className="mb-2">
+                          <button 
+                            onClick={() => setIsEditProfileOpen(true)}
+                            className="px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors"
+                          >
+                              编辑资料
+                          </button>
+                      </div>
+                   </div>
+                   
+                   <div className="mt-6">
+                       <h2 className="text-2xl font-bold text-slate-800">{user.name}</h2>
+                       <p className="text-slate-500 text-sm font-medium">系统管理员</p>
+                       
+                       <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                           <div className="p-4 bg-slate-50 rounded-lg border border-slate-100 flex items-center gap-3">
+                               <Mail size={18} className="text-slate-400"/>
+                               <div>
+                                   <p className="text-xs text-slate-400 uppercase font-bold">工作邮箱</p>
+                                   <p className="text-sm font-semibold text-slate-700">admin@uni.edu</p>
+                               </div>
+                           </div>
+                           <div className="p-4 bg-slate-50 rounded-lg border border-slate-100 flex items-center gap-3">
+                               <Shield size={18} className="text-slate-400"/>
+                               <div>
+                                   <p className="text-xs text-slate-400 uppercase font-bold">管理权限</p>
+                                   <p className="text-sm font-semibold text-slate-700">超级管理员 (Root)</p>
+                               </div>
+                           </div>
+                       </div>
+                   </div>
+                </div>
+             </div>
+
+            {/* Edit Profile Modal */}
+            {isEditProfileOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                            <h3 className="font-bold text-slate-800">编辑个人资料</h3>
+                            <button onClick={() => setIsEditProfileOpen(false)}><X size={20} className="text-slate-400 hover:text-slate-600"/></button>
+                        </div>
+                        <form onSubmit={handleSaveProfile} className="p-6 space-y-4">
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-1">姓名</label>
+                                <input 
+                                    type="text" 
+                                    required
+                                    className="w-full border-slate-300 rounded-lg p-2.5 border focus:ring-2 focus:ring-brand-500"
+                                    value={profileForm.name}
+                                    onChange={e => setProfileForm({...profileForm, name: e.target.value})}
+                                />
+                            </div>
+                            <div className="pt-4 flex justify-end gap-3">
+                                <button 
+                                    type="button" 
+                                    onClick={() => setIsEditProfileOpen(false)} 
+                                    className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-medium"
+                                >
+                                    取消
+                                </button>
+                                <button 
+                                    type="submit" 
+                                    className="px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 flex items-center gap-2"
+                                >
+                                    <Save size={16}/> 保存更改
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+          </div>
+      )
   }
 
   return <div className="text-slate-500 p-8 text-center">请选择左侧菜单项</div>;
