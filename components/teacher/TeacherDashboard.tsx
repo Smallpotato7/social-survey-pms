@@ -5,8 +5,8 @@ import {
 import { Submission, TaskStatus, TaskType, SurveyTheme, User } from '../../types';
 import { Check, X, MessageCircle, FileText, Eye, Settings, Search, Filter, PenTool, UploadCloud, Calendar, Plus, Trash2, File, GraduationCap, MapPin, User as UserIcon, Shield, Lock, AlertCircle, Book, Clock, Download, Camera, Save } from 'lucide-react';
 
-// Netlify-inspired Teal Palette for Charts
-const COLORS = ['#008278', '#00a396', '#00c7b7', '#5eead4'];
+// Sky Blue Palette for Charts
+const COLORS = ['#0369a1', '#0284c7', '#0ea5e9', '#7dd3fc'];
 
 // Helper to translate TaskType to Chinese
 const TASK_TYPE_CN: Record<TaskType, string> = {
@@ -96,8 +96,8 @@ const MOCK_RESOURCES = [
 
 // Mock Published History
 const MOCK_PUBLISHED_HISTORY = [
-    { id: 101, title: '2026年度社会调查选题确认', type: TaskType.THEME_SELECTION, date: '2026-09-01', deadline: '2026-10-15', status: '进行中' },
-    { id: 102, title: '过程性材料提交（第一阶段）', type: TaskType.PROCESS_MATERIAL, date: '2026-09-20', deadline: '2026-11-01', status: '未开始' },
+    { id: 101, title: '2026年度社会调查选题确认', type: TaskType.THEME_SELECTION, date: '2026-01-01', deadline: '2026-10-15', status: '进行中' },
+    { id: 102, title: '过程性材料提交（第一阶段）', type: TaskType.PROCESS_MATERIAL, date: '2026-01-20', deadline: '2026-11-01', status: '进行中' },
 ];
 
 export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ activeTab, user, onUpdateUser }) => {
@@ -392,7 +392,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ activeTab, u
       );
   }
 
-  // ... (Profile tab logic remains unchanged) ...
+  // Profile tab logic
   if (activeTab === 'profile') {
     return (
         <div className="grid grid-cols-12 gap-8 h-full">
@@ -716,7 +716,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ activeTab, u
                         <div className="flex space-x-4 pt-4">
                            <button 
                              onClick={() => handleReview(selectedSubmission.id, TaskStatus.APPROVED)}
-                             className="flex-1 bg-teal-600 hover:bg-teal-700 text-white py-3 px-4 rounded-md flex items-center justify-center gap-2 font-medium shadow-sm transition-all"
+                             className="flex-1 bg-sky-600 hover:bg-sky-700 text-white py-3 px-4 rounded-md flex items-center justify-center gap-2 font-medium shadow-sm transition-all"
                            >
                              <Check size={18}/> 通过并评分
                            </button>
@@ -842,7 +842,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ activeTab, u
                 <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} tick={{fill: '#64748b'}} />
                 <YAxis fontSize={12} tickLine={false} axisLine={false} tick={{fill: '#64748b'}} />
                 <RechartsTooltip cursor={{fill: 'transparent'}} contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
-                <Bar dataKey="value" fill="#008278" radius={[4, 4, 0, 0]} barSize={50} />
+                <Bar dataKey="value" fill="#0284c7" radius={[4, 4, 0, 0]} barSize={50} />
               </BarChart>
             </ResponsiveContainer>
           </div>

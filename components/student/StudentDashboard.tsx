@@ -364,7 +364,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, u
                  <div className="flex items-start justify-between gap-4 mb-4">
                     <h4 className="text-lg font-bold text-slate-800 leading-tight">
                         {task.type === TaskType.THEME_SELECTION ? '1. 调查选题确认' :
-                         task.type === TaskType.PROCESS_MATERIAL ? '2. 过程性材料' : '3. 终结性报告'}
+                         task.type === TaskType.PROCESS_MATERIAL ? '2. 过程性材料' : '3. 调查报告'}
                     </h4>
                     <span className={`flex-shrink-0 text-[10px] px-2 py-1 rounded-full font-bold uppercase tracking-wide border
                         ${task.status === TaskStatus.PENDING ? 'bg-slate-100 text-slate-500 border-slate-200' :
@@ -422,11 +422,11 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, u
                                         onChange={(e) => handleFormChange(task.id, 'theme', e.target.value)}
                                     >
                                         <option value="">请选择主题类型...</option>
-                                        <option value={SurveyTheme.POLITICS}>政治类</option>
-                                        <option value={SurveyTheme.ECONOMY}>经济类</option>
-                                        <option value={SurveyTheme.CULTURE}>文化类</option>
-                                        <option value={SurveyTheme.SOCIETY}>社会类</option>
-                                        <option value={SurveyTheme.ECOLOGY}>生态类</option>
+                                        <option value={SurveyTheme.POLITICS}>政治</option>
+                                        <option value={SurveyTheme.ECONOMY}>经济</option>
+                                        <option value={SurveyTheme.CULTURE}>文化</option>
+                                        <option value={SurveyTheme.SOCIETY}>社会</option>
+                                        <option value={SurveyTheme.ECOLOGY}>生态</option>
                                     </select>
                                     <div className="absolute right-4 top-4 text-slate-400 pointer-events-none">▼</div>
                                   </div>

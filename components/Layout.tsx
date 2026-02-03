@@ -79,8 +79,8 @@ export const Layout: React.FC<LayoutProps> = ({ user, onLogout, children, active
         {/* Sidebar Header */}
         <div className="h-16 flex items-center justify-between px-5 border-b border-slate-200/50">
           {isSidebarOpen ? (
-              <div className="flex items-center gap-2 text-brand-600">
-                  <div className="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-sm">S</div>
+              <div className="flex items-center text-brand-600">
+                  {/* Removed the small square icon box here */}
                   <span className="font-bold text-lg tracking-tight text-slate-800">社会调查管理</span>
               </div>
           ) : (
